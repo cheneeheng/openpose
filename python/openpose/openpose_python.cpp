@@ -151,7 +151,7 @@ namespace op
                     heatMapTypes, heatMapScaleMode, FLAGS_part_candidates, (float)FLAGS_render_threshold,
                     FLAGS_number_people_max, FLAGS_maximize_positives, FLAGS_fps_max, op::String(FLAGS_prototxt_path),
                     op::String(FLAGS_caffemodel_path), (float)FLAGS_upsampling_ratio, enableGoogleLogging,
-                    FLAGS_posenet_only, FLAGS_custom_net_input_layer, FLAGS_custom_net_output_layer};
+                    FLAGS_posenet_only, op::String(FLAGS_custom_net_input_layer), op::String(FLAGS_custom_net_output_layer)};
                 opWrapper->configure(wrapperStructPose);
                 // Face configuration (use WrapperStructFace{} to disable it)
                 const WrapperStructFace wrapperStructFace{

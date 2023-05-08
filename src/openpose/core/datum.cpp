@@ -22,6 +22,7 @@ namespace op
         // Input image and rendered version
         cvInputData{datum.cvInputData},
         inputNetData{datum.inputNetData},
+        customInputNetData{datum.customInputNetData},
         outputData{datum.outputData},
         cvOutputData{datum.cvOutputData},
         // Resulting Array<float> data parameters
@@ -29,6 +30,7 @@ namespace op
         poseIds{datum.poseIds},
         poseScores{datum.poseScores},
         poseHeatMaps{datum.poseHeatMaps},
+        poseRawHeatMaps{datum.poseRawHeatMaps},
         poseCandidates{datum.poseCandidates},
         faceRectangles{datum.faceRectangles},
         faceKeypoints{datum.faceKeypoints},
@@ -89,6 +91,7 @@ namespace op
             // Input image and rendered version
             cvInputData = datum.cvInputData;
             inputNetData = datum.inputNetData;
+            customInputNetData = datum.customInputNetData;
             outputData = datum.outputData;
             cvOutputData = datum.cvOutputData;
             // Resulting Array<float> data parameters
@@ -96,6 +99,7 @@ namespace op
             poseIds = datum.poseIds,
             poseScores = datum.poseScores,
             poseHeatMaps = datum.poseHeatMaps,
+            poseRawHeatMaps = datum.poseRawHeatMaps,
             poseCandidates = datum.poseCandidates,
             faceRectangles = datum.faceRectangles,
             faceKeypoints = datum.faceKeypoints,
@@ -165,6 +169,7 @@ namespace op
             // Input image and rendered version
             std::swap(cvInputData, datum.cvInputData);
             std::swap(inputNetData, datum.inputNetData);
+            std::swap(customInputNetData, datum.customInputNetData);
             std::swap(outputData, datum.outputData);
             std::swap(cvOutputData, datum.cvOutputData);
             // Resulting Array<float> data parameters
@@ -172,6 +177,7 @@ namespace op
             std::swap(poseIds, datum.poseIds);
             std::swap(poseScores, datum.poseScores);
             std::swap(poseHeatMaps, datum.poseHeatMaps);
+            std::swap(poseRawHeatMaps, datum.poseRawHeatMaps);
             std::swap(poseCandidates, datum.poseCandidates);
             std::swap(faceRectangles, datum.faceRectangles);
             std::swap(faceKeypoints, datum.faceKeypoints);
@@ -232,6 +238,7 @@ namespace op
             // Input image and rendered version
             std::swap(cvInputData, datum.cvInputData);
             std::swap(inputNetData, datum.inputNetData);
+            std::swap(customInputNetData, datum.customInputNetData);
             std::swap(outputData, datum.outputData);
             std::swap(cvOutputData, datum.cvOutputData);
             // Resulting Array<float> data parameters
@@ -239,6 +246,7 @@ namespace op
             std::swap(poseIds, datum.poseIds);
             std::swap(poseScores, datum.poseScores);
             std::swap(poseHeatMaps, datum.poseHeatMaps);
+            std::swap(poseRawHeatMaps, datum.poseRawHeatMaps);
             std::swap(poseCandidates, datum.poseCandidates);
             std::swap(faceRectangles, datum.faceRectangles);
             std::swap(faceKeypoints, datum.faceKeypoints);
@@ -309,6 +317,9 @@ namespace op
             datum.inputNetData.resize(inputNetData.size());
             for (auto i = 0u ; i < datum.inputNetData.size() ; i++)
                 datum.inputNetData[i] = inputNetData[i].clone();
+            datum.customInputNetData.resize(customInputNetData.size());
+            for (auto i = 0u ; i < datum.customInputNetData.size() ; i++)
+                datum.customInputNetData[i] = customInputNetData[i].clone();
             datum.outputData = outputData.clone();
             datum.cvOutputData = cvOutputData.clone();
             // Resulting Array<float> data parameters
@@ -316,6 +327,7 @@ namespace op
             datum.poseIds = poseIds.clone();
             datum.poseScores = poseScores.clone();
             datum.poseHeatMaps = poseHeatMaps.clone();
+            datum.poseRawHeatMaps = poseRawHeatMaps.clone();
             datum.poseCandidates = poseCandidates;
             datum.faceRectangles = faceRectangles;
             datum.faceKeypoints = faceKeypoints.clone();

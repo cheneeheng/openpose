@@ -11,7 +11,7 @@ namespace op
     public:
         NetCaffe(const std::string& caffeProto, const std::string& caffeTrainedModel, const int gpuId = 0,
                  const bool enableGoogleLogging = true, const std::string& lastBlobName = "net_output",
-                 const std::string& firstBlobName = "input");
+                 const std::string& firstLayerName = "input");
 
         virtual ~NetCaffe();
 
@@ -20,6 +20,8 @@ namespace op
         void forwardPass(const Array<float>& inputNetData) const;
 
         std::shared_ptr<ArrayCpuGpu<float>> getOutputBlobArray() const;
+
+        void setInputDataSize(std::vector<int> size);
 
     private:
         // PIMPL idiom

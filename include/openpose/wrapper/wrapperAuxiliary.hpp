@@ -334,8 +334,8 @@ namespace op
                             wrapperStructPose.caffeModelPath.getStdString(),
                             wrapperStructPose.upsamplingRatio, wrapperStructPose.poseMode == PoseMode::Enabled,
                             wrapperStructPose.enableGoogleLogging,
-                            wrapperStructPose.netOnly, wrapperStructPose.customNetInputLayer,
-                            wrapperStructPose.customNetOutputLayer
+                            wrapperStructPose.netOnly, wrapperStructPose.customNetInputLayer.getStdString(),
+                            wrapperStructPose.customNetOutputLayer.getStdString()
                         ));
 
                     // Pose renderers

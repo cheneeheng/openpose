@@ -32,30 +32,36 @@ namespace op
             const std::string mCaffeProto;
             const std::string mCaffeTrainedModel;
             const std::string mLastBlobName;
-            const std::string mFirstBlobName;
+            const std::string mFirstLayerName;
             std::vector<int> mNetInputSize4D;
-            int mLastBlobIdx;
-            int mFirstBlobIdx;
+            int mLastLayerIdx;
+            int mFirstLayerIdx;
+            bool mInputIsFirstLayer;
+            std::vector<int> mInputDataSize;
             // Init with thread
             #ifdef NV_CAFFE
                 std::unique_ptr<caffe::Net> upCaffeNet;
                 boost::shared_ptr<caffe::TBlob<float>> spOutputBlob;
             #else
                 std::unique_ptr<caffe::Net<float>> upCaffeNet;
-                boost::shared_ptr<caffe::Blob<float>> spInputBlob;
                 boost::shared_ptr<caffe::Blob<float>> spOutputBlob;
             #endif
 
             ImplNetCaffe(const std::string& caffeProto, const std::string& caffeTrainedModel, const int gpuId,
-                         const bool enableGoogleLogging, const std::string& lastBlobName, const std::string& firstBlobName) :
+                         const bool enableGoogleLogging, const std::string& lastBlobName, const std::string& firstLayerName) :
                 mGpuId{gpuId},
                 mCaffeProto{caffeProto},
                 mCaffeTrainedModel{caffeTrainedModel},
                 mLastBlobName{lastBlobName},
-                mFirstBlobName{firstBlobName}
+                mFirstLayerName{firstLayerName}
             {
                 try
                 {
+                    if (strcmp(mFirstLayerName.c_str(), "input")==0 || strcmp(mFirstLayerName.c_str(), "image")==0)
+                        mInputIsFirstLayer = true;
+                    else
+                        mInputIsFirstLayer = false;
+
                     const std::string message{".\nPossible causes:\n"
                         "\t1. Not downloading the OpenPose trained models.\n"
                         "\t2. Not running OpenPose from the root directory (i.e., where the `model` folder is located, but do not move the `model` folder!). E.g.,\n"
@@ -128,10 +134,10 @@ namespace op
     #endif
 
     NetCaffe::NetCaffe(const std::string& caffeProto, const std::string& caffeTrainedModel, const int gpuId,
-                       const bool enableGoogleLogging, const std::string& lastBlobName, const std::string& firstBlobName)
+                       const bool enableGoogleLogging, const std::string& lastBlobName, const std::string& firstLayerName)
         #ifdef USE_CAFFE
             : upImpl{new ImplNetCaffe{caffeProto, caffeTrainedModel, gpuId, enableGoogleLogging,
-                                      lastBlobName, firstBlobName}}
+                                      lastBlobName, firstLayerName}}
         #endif
     {
         try
@@ -192,24 +198,27 @@ namespace op
                         cudaCheck(__LINE__, __FUNCTION__, __FILE__);
                     #endif
                 #endif
-                mFirstBlobIdx = upImpl->upCaffeNet->layer_index_by_name(upImpl->mFirstBlobName);
-                mLastBlobIdx = upImpl->upCaffeNet->layer_index_by_name(upImpl->mLastBlobName);
+                upImpl->mFirstLayerIdx = upImpl->upCaffeNet->layer_index_by_name(upImpl->mFirstLayerName);
+                upImpl->mLastLayerIdx = upImpl->upCaffeNet->layer_index_by_name(upImpl->mLastBlobName);
+                // Sanity check
+                if (upImpl->mFirstLayerIdx == -1)
+                    error("The mFirstLayerIdx is -1. Did you use the same name than the prototxt? (Used: "
+                          + upImpl->mFirstLayerName + ").", __LINE__, __FUNCTION__, __FILE__);
+                if (upImpl->mLastLayerIdx == -1)
+                    error("The mLastLayerIdx is -1. Did you use the same name than the prototxt? (Used: "
+                          + upImpl->mLastBlobName + ").", __LINE__, __FUNCTION__, __FILE__);
+                if (!upImpl->mInputIsFirstLayer)
+                    if (upImpl->upCaffeNet->blob_by_name(upImpl->mFirstLayerName) == nullptr)
+                        error("The custom input blob is a nullptr. Did you use the same name than the prototxt? (Used: "
+                            + upImpl->mFirstLayerName + ").", __LINE__, __FUNCTION__, __FILE__);
                 // Set spOutputBlob
-                // Set spInputBlob
                 #ifdef NV_CAFFE
                     upImpl->spOutputBlob = boost::static_pointer_cast<caffe::TBlob<float>>(
                         upImpl->upCaffeNet->blob_by_name(upImpl->mLastBlobName));
-                    upImpl->spInputBlob = boost::static_pointer_cast<caffe::TBlob<float>>(
-                        upImpl->upCaffeNet->blob_by_name(upImpl->mFirstBlobName));
                 #else
-                    upImpl->spInputBlob = upImpl->upCaffeNet->blob_by_name(upImpl->mFirstBlobName);
                     upImpl->spOutputBlob = upImpl->upCaffeNet->blob_by_name(upImpl->mLastBlobName);
                     // upImpl->spOutputBlob = upImpl->upCaffeNet->blob_by_name("pool1_stage1");
                 #endif
-                // Sanity check
-                if (upImpl->spInputBlob == nullptr)
-                    error("The input blob is a nullptr. Did you use the same name than the prototxt? (Used: "
-                          + upImpl->mFirstBlobName + ").", __LINE__, __FUNCTION__, __FILE__);
                 // Sanity check
                 if (upImpl->spOutputBlob == nullptr)
                     error("The output blob is a nullptr. Did you use the same name than the prototxt? (Used: "
@@ -233,36 +242,64 @@ namespace op
                 // Sanity checks
                 if (inputData.empty())
                     error("The Array inputData cannot be empty.", __LINE__, __FUNCTION__, __FILE__);
-                if (inputData.getNumberDimensions() != 4 || inputData.getSize(1) != 3)
+                if (inputData.getNumberDimensions() != 4)
+                    error("The Array inputData must have 4 dimensions: [batch size, channel/RGB, height, width].",
+                          __LINE__, __FUNCTION__, __FILE__);
+                if (upImpl->mInputIsFirstLayer && inputData.getSize(1) != 3)
                     error("The Array inputData must have 4 dimensions: [batch size, 3 (RGB), height, width].",
                           __LINE__, __FUNCTION__, __FILE__);
                 // Reshape Caffe net if required
-                if (!vectorsAreEqual(upImpl->mNetInputSize4D, inputData.getSize()))
+                if (!vectorsAreEqual(upImpl->mNetInputSize4D, upImpl->mInputDataSize))
                 {
-                    upImpl->mNetInputSize4D = inputData.getSize();
-                    reshapeNetCaffe(upImpl->upCaffeNet.get(), inputData.getSize());
+                    upImpl->mNetInputSize4D = upImpl->mInputDataSize;
+                    reshapeNetCaffe(upImpl->upCaffeNet.get(), upImpl->mInputDataSize);
                 }
-                // Copy frame data to GPU memory
-                #ifdef USE_CUDA
-                    #ifdef NV_CAFFE
-                        auto* gpuImagePtr = upImpl->upCaffeNet->blobs().at(0)->mutable_gpu_data<float>();
-                    #else
+                if (upImpl->mInputIsFirstLayer)
+                {
+                    // Copy frame data to GPU memory
+                    #ifdef USE_CUDA
+                        #ifdef NV_CAFFE
+                            auto* gpuImagePtr = upImpl->upCaffeNet->blobs().at(0)->mutable_gpu_data<float>();
+                        #else
+                            auto* gpuImagePtr = upImpl->upCaffeNet->blobs().at(0)->mutable_gpu_data();
+                        #endif
+                        cudaMemcpy(gpuImagePtr, inputData.getConstPtr(), inputData.getVolume() * sizeof(float),
+                                cudaMemcpyHostToDevice);
+                    #elif defined USE_OPENCL
                         auto* gpuImagePtr = upImpl->upCaffeNet->blobs().at(0)->mutable_gpu_data();
+                        cl::Buffer imageBuffer = cl::Buffer((cl_mem)gpuImagePtr, true);
+                        OpenCL::getInstance(upImpl->mGpuId)->getQueue().enqueueWriteBuffer(
+                            imageBuffer, true, 0, inputData.getVolume() * sizeof(float), inputData.getConstPtr());
+                    #else
+                        auto* cpuImagePtr = upImpl->upCaffeNet->blobs().at(0)->mutable_cpu_data();
+                        std::copy(inputData.getConstPtr(), inputData.getConstPtr() + inputData.getVolume(), cpuImagePtr);
                     #endif
-                    cudaMemcpy(gpuImagePtr, inputData.getConstPtr(), inputData.getVolume() * sizeof(float),
-                               cudaMemcpyHostToDevice);
-                #elif defined USE_OPENCL
-                    auto* gpuImagePtr = upImpl->upCaffeNet->blobs().at(0)->mutable_gpu_data();
-                    cl::Buffer imageBuffer = cl::Buffer((cl_mem)gpuImagePtr, true);
-                    OpenCL::getInstance(upImpl->mGpuId)->getQueue().enqueueWriteBuffer(
-                        imageBuffer, true, 0, inputData.getVolume() * sizeof(float), inputData.getConstPtr());
-                #else
-                    auto* cpuImagePtr = upImpl->upCaffeNet->blobs().at(0)->mutable_cpu_data();
-                    std::copy(inputData.getConstPtr(), inputData.getConstPtr() + inputData.getVolume(), cpuImagePtr);
-                #endif
+                }
+                else
+                {
+                    // Copy frame data to GPU memory
+                    #ifdef USE_CUDA
+                        #ifdef NV_CAFFE
+                            auto* gpuImagePtr = upImpl->upCaffeNet->blob_by_name(upImpl->mFirstLayerName)->mutable_gpu_data<float>();
+                        #else
+                            auto* gpuImagePtr = upImpl->upCaffeNet->blob_by_name(upImpl->mFirstLayerName)->mutable_gpu_data();
+                        #endif
+                        cudaMemcpy(gpuImagePtr, inputData.getConstPtr(), inputData.getVolume() * sizeof(float),
+                                cudaMemcpyHostToDevice);
+                    #elif defined USE_OPENCL
+                        auto* gpuImagePtr = upImpl->upCaffeNet->blob_by_name(upImpl->mFirstLayerName)->mutable_gpu_data();
+                        cl::Buffer imageBuffer = cl::Buffer((cl_mem)gpuImagePtr, true);
+                        OpenCL::getInstance(upImpl->mGpuId)->getQueue().enqueueWriteBuffer(
+                            imageBuffer, true, 0, inputData.getVolume() * sizeof(float), inputData.getConstPtr());
+                    #else
+                        auto* cpuImagePtr = upImpl->upCaffeNet->blob_by_name(upImpl->mFirstLayerName)->mutable_cpu_data();
+                        std::copy(inputData.getConstPtr(), inputData.getConstPtr() + inputData.getVolume(), cpuImagePtr);
+                    #endif
+                }
                 // Perform deep network forward pass
                 // upImpl->upCaffeNet->ForwardFrom(0);
-                upImpl->upCaffeNet->ForwardFromTo(mFirstBlobIdx, mLastBlobIdx);
+                // +1 cause this function uses <= for loop condition.
+                upImpl->upCaffeNet->ForwardFromTo(upImpl->mFirstLayerIdx+1, upImpl->mLastLayerIdx);
                 // Cuda checks
                 #ifdef USE_CUDA
                     cudaCheck(__LINE__, __FUNCTION__, __FILE__);
@@ -291,6 +328,19 @@ namespace op
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
             return nullptr;
+        }
+    }
+
+    void NetCaffe::setInputDataSize(std::vector<int> size)
+    {
+        try
+        {
+            upImpl->mInputDataSize = size;
+        }
+        catch (const std::exception& e)
+        {
+            error(e.what(), __LINE__, __FUNCTION__, __FILE__);
+            return;
         }
     }
 }

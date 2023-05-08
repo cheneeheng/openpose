@@ -223,7 +223,7 @@ namespace op
             }
             // Array to load data onto
             size_t c = 0;
-            Array<float> array({(int)(dimsInfo[1]), (int)(dimsInfo[2]), (int)(dimsInfo[3])}, 0.0);
+            Array<float> array({1, (int)(dimsInfo[1]), (int)(dimsInfo[2]), (int)(dimsInfo[3])}, 0.0);
             while (inputFile.read(reinterpret_cast<char*>(&array[c]), sizeof(float)))
             {
                 c++;
@@ -233,7 +233,7 @@ namespace op
             // inputFile.read(reinterpret_cast<char*>(&array), array.getVolume() * sizeof(float));
             // Close file
             inputFile.close();
-            return array;
+            return array;  // B,C,H,W
         }
         catch (const std::exception& e)
         {

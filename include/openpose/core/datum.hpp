@@ -54,6 +54,7 @@ namespace op
          * Each array size: 3 x input_net_height x input_net_width
          */
         std::vector<Array<float>> inputNetData;
+        std::vector<Array<float>> customInputNetData;
 
         /**
          * Rendered image in Array<float> format.

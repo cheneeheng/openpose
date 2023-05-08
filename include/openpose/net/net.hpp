@@ -15,6 +15,9 @@ namespace op
         virtual void forwardPass(const Array<float>& inputData) const = 0;
 
         virtual std::shared_ptr<ArrayCpuGpu<float>> getOutputBlobArray() const = 0;
+
+        virtual void setInputDataSize(std::vector<int> size) = 0;
+        
     };
 }
 

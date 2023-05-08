@@ -28,7 +28,8 @@ namespace op
                          const Point<int>& inputDataSize,
                          const std::vector<double>& scaleRatios,
                          const Array<float>& poseNetOutput = Array<float>{},
-                         const long long frameId = -1ll);
+                         const long long frameId = -1ll,
+                         const std::vector<Array<float>>& customInputNetData = {});
 
         // PoseExtractorNet functions
         Array<float> getHeatMapsCopy() const;

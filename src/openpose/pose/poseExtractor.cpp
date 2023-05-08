@@ -39,12 +39,13 @@ namespace op
                                     const Point<int>& inputDataSize,
                                     const std::vector<double>& scaleInputToNetInputs,
                                     const Array<float>& poseNetOutput,
-                                    const long long frameId)
+                                    const long long frameId,
+                                    const std::vector<Array<float>>& customInputNetData)
     {
         try
         {
             if (mTracking < 1 || frameId % (mTracking+1) == 0)
-                spPoseExtractorNet->forwardPass(inputNetData, inputDataSize, scaleInputToNetInputs, poseNetOutput);
+                spPoseExtractorNet->forwardPass(inputNetData, inputDataSize, scaleInputToNetInputs, poseNetOutput, customInputNetData);
             else
                 spPoseExtractorNet->clear();
         }

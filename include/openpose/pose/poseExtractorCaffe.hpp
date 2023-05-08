@@ -41,7 +41,8 @@ namespace op
         virtual void forwardPass(
             const std::vector<Array<float>>& inputNetData, const Point<int>& inputDataSize,
             const std::vector<double>& scaleInputToNetInputs = {1.f},
-            const Array<float>& poseNetOutput = Array<float>{});
+            const Array<float>& poseNetOutput = Array<float>{},
+            const std::vector<Array<float>>& customInputNetData = {});
 
         const float* getCandidatesCpuConstPtr() const;
 
@@ -68,6 +69,7 @@ namespace op
         const bool mNetOnly;
         const std::string mCustomNetInputLayer;
         const std::string mCustomNetOutputLayer;
+        bool mInputIsFirstLayer;
         // General parameters
         std::vector<std::shared_ptr<Net>> spNets;
         std::shared_ptr<ResizeAndMergeCaffe<float>> spResizeAndMergeCaffe;

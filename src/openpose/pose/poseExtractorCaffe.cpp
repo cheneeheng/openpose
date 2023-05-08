@@ -76,16 +76,26 @@ namespace op
             std::vector<std::shared_ptr<ArrayCpuGpu<float>>>& caffeNetOutputBlob,
             const PoseModel poseModel, const int gpuId, const std::string& modelFolder,
             const std::string& protoTxtPath, const std::string& caffeModelPath, const bool enableGoogleLogging,
-            const std::string& customNetOutputLayer, const std::string& customNetInputLayer)
+            const bool netOnly, const std::string& customNetOutputLayer, const std::string& customNetInputLayer)
         {
             try
             {
                 // Add Caffe Net
-                net.emplace_back(
-                    std::make_shared<NetCaffe>(
-                        modelFolder + (protoTxtPath.empty() ? getPoseProtoTxt(poseModel) : protoTxtPath),
-                        modelFolder + (caffeModelPath.empty() ? getPoseTrainedModel(poseModel) : caffeModelPath),
-                        gpuId, enableGoogleLogging, customNetOutputLayer, customNetInputLayer));
+                if (netOnly)
+                    net.emplace_back(
+                        std::make_shared<NetCaffe>(
+                            modelFolder + (protoTxtPath.empty() ? getPoseProtoTxt(poseModel) : protoTxtPath),
+                            modelFolder + (caffeModelPath.empty() ? getPoseTrainedModel(poseModel) : caffeModelPath),
+                            gpuId, enableGoogleLogging,
+                            (customNetOutputLayer.empty() ? "net_output" : customNetOutputLayer),
+                            (customNetInputLayer.empty() ? "input" : customNetInputLayer)));
+                else
+                    net.emplace_back(
+                        std::make_shared<NetCaffe>(
+                            modelFolder + (protoTxtPath.empty() ? getPoseProtoTxt(poseModel) : protoTxtPath),
+                            modelFolder + (caffeModelPath.empty() ? getPoseTrainedModel(poseModel) : caffeModelPath),
+                            gpuId, enableGoogleLogging, "net_output",
+                            (customNetInputLayer.empty() ? "input" : customNetInputLayer)));
                 // net.emplace_back(
                 //     std::make_shared<NetOpenCv>(
                 //         modelFolder + (protoTxtPath.empty() ? getPoseProtoTxt(poseModel) : protoTxtPath),
@@ -127,7 +137,8 @@ namespace op
         mEnableGoogleLogging{enableGoogleLogging},
         mNetOnly{netOnly},
         mCustomNetInputLayer{customNetInputLayer},
-        mCustomNetOutputLayer{customNetOutputLayer}
+        mCustomNetOutputLayer{customNetOutputLayer},
+        mInputIsFirstLayer{true}  // will be changed at netInitializationOnThread
         #ifdef USE_CAFFE
             ,
             spResizeAndMergeCaffe{std::make_shared<ResizeAndMergeCaffe<float>>()},
@@ -180,7 +191,13 @@ namespace op
                     addCaffeNetOnThread(
                         spNets, spCaffeNetOutputBlobs, mPoseModel, mGpuId,
                         mModelFolder, mProtoTxtPath, mCaffeModelPath,
-                        mEnableGoogleLogging, mCustomNetOutputLayer, mCustomNetInputLayer);
+                        mEnableGoogleLogging, mNetOnly, mCustomNetOutputLayer, mCustomNetInputLayer);
+                    if (mCustomNetInputLayer.empty() ||
+                            strcmp(mCustomNetInputLayer.c_str(), "input")==0 ||
+                            strcmp(mCustomNetInputLayer.c_str(), "image")==0)
+                        mInputIsFirstLayer = true;
+                    else
+                        mInputIsFirstLayer = false;
                     #ifdef USE_CUDA
                         cudaCheck(__LINE__, __FUNCTION__, __FILE__);
                     #endif
@@ -205,7 +222,8 @@ namespace op
 
     void PoseExtractorCaffe::forwardPass(
         const std::vector<Array<float>>& inputNetData, const Point<int>& inputDataSize,
-        const std::vector<double>& scaleInputToNetInputs, const Array<float>& poseNetOutput)
+        const std::vector<double>& scaleInputToNetInputs, const Array<float>& poseNetOutput,
+        const std::vector<Array<float>>& customInputNetData)
     {
         try
         {
@@ -236,6 +254,12 @@ namespace op
                         error("The argument poseNetOutput is not empty and you have also explicitly chosen to run"
                               " the OpenPose network" + errorMsg, __LINE__, __FUNCTION__, __FILE__);
                 }
+                if (mInputIsFirstLayer && !customInputNetData.empty())
+                    error("mInputIsFirstLayer is true but customInputNetData is not empty.",
+                          __LINE__, __FUNCTION__, __FILE__);
+                if (!mInputIsFirstLayer && customInputNetData.empty())
+                    error("mInputIsFirstLayer is false and customInputNetData is empty.",
+                          __LINE__, __FUNCTION__, __FILE__);
 
                 // Resize std::vectors if required
                 const auto numberScales = inputNetData.size();
@@ -248,10 +272,16 @@ namespace op
                         addCaffeNetOnThread(
                             spNets, spCaffeNetOutputBlobs, mPoseModel, mGpuId,
                             mModelFolder, mProtoTxtPath, mCaffeModelPath, false,
-                            mCustomNetOutputLayer, mCustomNetInputLayer);
+                            mNetOnly, mCustomNetOutputLayer, mCustomNetInputLayer);
 
                     for (auto i = 0u ; i < inputNetData.size(); i++)
-                        spNets.at(i)->forwardPass(inputNetData[i]);
+                    {
+                        spNets.at(i)->setInputDataSize(inputNetData[i].getSize());
+                        if (customInputNetData.empty())
+                            spNets.at(i)->forwardPass(inputNetData[i]);
+                        else
+                            spNets.at(i)->forwardPass(customInputNetData[i]);
+                    }
                 }
                 // If custom network output
                 else
@@ -450,6 +480,9 @@ namespace op
                                 }
                                 // Re-Process image
                                 // 1. Caffe deep network
+                                if (!customInputNetData.empty())
+                                    error("customInputNetData does not support TOP_DOWN_REFINEMENT for now.",
+                                        __LINE__, __FUNCTION__, __FILE__);
                                 spNets.at(0)->forwardPass(inputNetDataRoi);
                                 std::vector<std::shared_ptr<ArrayCpuGpu<float>>> caffeNetOutputBlob{
                                     spCaffeNetOutputBlobs[0]};
