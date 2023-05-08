@@ -11,7 +11,8 @@ namespace op
         const std::vector<HeatMapType>& heatMapTypes_, const ScaleMode heatMapScaleMode_,
         const bool addPartCandidates_, const float renderThreshold_, const int numberPeopleMax_,
         const bool maximizePositives_, const double fpsMax_, const String& protoTxtPath_,
-        const String& caffeModelPath_, const float upsamplingRatio_, const bool enableGoogleLogging_) :
+        const String& caffeModelPath_, const float upsamplingRatio_, const bool enableGoogleLogging_,
+        const bool netOnly_, const String& customNetInputLayer_, const String& customNetOutputLayer_) :
         poseMode{poseMode_},
         netInputSize{netInputSize_},
         netInputSizeDynamicBehavior{netInputSizeDynamicBehavior_},
@@ -38,7 +39,15 @@ namespace op
         protoTxtPath{protoTxtPath_},
         caffeModelPath{caffeModelPath_},
         upsamplingRatio{upsamplingRatio_},
-        enableGoogleLogging{enableGoogleLogging_}
-    {
+        enableGoogleLogging{enableGoogleLogging_},
+        netOnly{netOnly_},
+        customNetInputLayer{customNetInputLayer_},
+        customNetOutputLayer{customNetOutputLayer_}
+    {                
+        if (!netOnly && !customNetOutputLayer.empty())
+        {
+            error("netOnly is false so customNetOutputLayer should be empty",
+                  __LINE__, __FUNCTION__, __FILE__);
+        }
     }
 }

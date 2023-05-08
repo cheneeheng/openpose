@@ -135,6 +135,9 @@ DEFINE_bool(part_candidates,            false,          "Also enable `write_json
                                                         " use this information.");
 DEFINE_double(upsampling_ratio,         0.,             "Upsampling ratio between the `net_resolution` and the output net results. A value less"
                                                         " or equal than 0 (default) will use the network default value (recommended).");
+DEFINE_bool(posenet_only,               false,          "Experimental, runs network only");
+DEFINE_string(custom_net_input_layer,   "",             "Experimental, runs network from layerX.");
+DEFINE_string(custom_net_output_layer,  "",             "Experimental, uses output from layer X, also to ensure heatmap size is correct.");
 // OpenPose Face
 DEFINE_bool(face,                       false,          "Enables face keypoint detection. It will share some parameters from the body pose, e.g."
                                                         " `model_folder`. Note that this will considerable slow down the performance and increase"

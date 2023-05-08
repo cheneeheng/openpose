@@ -23,7 +23,9 @@ namespace op
             const bool addPartCandidates = false, const bool maximizePositives = false,
             const std::string& protoTxtPath = "", const std::string& caffeModelPath = "",
             const float upsamplingRatio = 0.f, const bool enableNet = true,
-            const bool enableGoogleLogging = true);
+            const bool enableGoogleLogging = true,
+            const bool netOnly = false, const std::string& customNetInputLayer = "",
+            const std::string& customNetOutputLayer = "");
 
         virtual ~PoseExtractorCaffe();
 
@@ -63,6 +65,9 @@ namespace op
         const float mUpsamplingRatio;
         const bool mEnableNet;
         const bool mEnableGoogleLogging;
+        const bool mNetOnly;
+        const std::string mCustomNetInputLayer;
+        const std::string mCustomNetOutputLayer;
         // General parameters
         std::vector<std::shared_ptr<Net>> spNets;
         std::shared_ptr<ResizeAndMergeCaffe<float>> spResizeAndMergeCaffe;

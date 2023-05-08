@@ -15,7 +15,8 @@ namespace op
                          const std::vector<HeatMapType>& heatMapTypes = {},
                          const ScaleMode heatMapScaleMode = ScaleMode::ZeroToOneFixedAspect,
                          const bool addPartCandidates = false,
-                         const bool maximizePositives = false);
+                         const bool maximizePositives = false,
+                         const bool customOutput = false);
 
         virtual ~PoseExtractorNet();
 
@@ -36,6 +37,8 @@ namespace op
         virtual std::vector<int> getHeatMapSize() const = 0;
 
         Array<float> getHeatMapsCopy() const;
+
+        Array<float> getRawHeatMaps() const;
 
         std::vector<std::vector<std::array<float,3>>> getCandidatesCopy() const;
 
@@ -60,6 +63,7 @@ namespace op
         Point<int> mNetOutputSize;
         Array<float> mPoseKeypoints;
         Array<float> mPoseScores;
+        Array<float> mRawHeatMaps;
         float mScaleNetToOutput;
 
         void checkThread() const;
@@ -72,6 +76,7 @@ namespace op
         const bool mAddPartCandidates;
         std::array<std::atomic<double>, (int)PoseProperty::Size> mProperties;
         std::thread::id mThreadId;
+        const bool mCustomOutput;
 
         DELETE_COPY(PoseExtractorNet);
     };

@@ -67,6 +67,19 @@ namespace op
         }
     }
 
+    Array<float> PoseExtractor::getRawHeatMaps() const
+    {
+        try
+        {
+            return spPoseExtractorNet->getRawHeatMaps();
+        }
+        catch (const std::exception& e)
+        {
+            error(e.what(), __LINE__, __FUNCTION__, __FILE__);
+            return Array<float>{};
+        }
+    }
+
     std::vector<std::vector<std::array<float, 3>>> PoseExtractor::getCandidatesCopy() const
     {
         try

@@ -23,6 +23,8 @@ namespace op
     // arrayData = x[1+int(round(x[0])):]
     OP_API void saveFloatArray(const Array<float>& array, const std::string& fullFilePath);
 
+    OP_API Array<float> loadFloatArray(const std::string& fullFilePath);
+
     // Save/load json, xml, yaml, yml
     OP_API void saveData(
         const std::vector<Matrix>& opMats, const std::vector<std::string>& cvMatNames,

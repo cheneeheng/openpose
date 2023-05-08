@@ -333,7 +333,9 @@ namespace op
                             wrapperStructPose.protoTxtPath.getStdString(),
                             wrapperStructPose.caffeModelPath.getStdString(),
                             wrapperStructPose.upsamplingRatio, wrapperStructPose.poseMode == PoseMode::Enabled,
-                            wrapperStructPose.enableGoogleLogging
+                            wrapperStructPose.enableGoogleLogging,
+                            wrapperStructPose.netOnly, wrapperStructPose.customNetInputLayer,
+                            wrapperStructPose.customNetOutputLayer
                         ));
 
                     // Pose renderers

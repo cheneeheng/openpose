@@ -32,22 +32,27 @@ namespace op
             const std::string mCaffeProto;
             const std::string mCaffeTrainedModel;
             const std::string mLastBlobName;
+            const std::string mFirstBlobName;
             std::vector<int> mNetInputSize4D;
+            int mLastBlobIdx;
+            int mFirstBlobIdx;
             // Init with thread
             #ifdef NV_CAFFE
                 std::unique_ptr<caffe::Net> upCaffeNet;
                 boost::shared_ptr<caffe::TBlob<float>> spOutputBlob;
             #else
                 std::unique_ptr<caffe::Net<float>> upCaffeNet;
+                boost::shared_ptr<caffe::Blob<float>> spInputBlob;
                 boost::shared_ptr<caffe::Blob<float>> spOutputBlob;
             #endif
 
             ImplNetCaffe(const std::string& caffeProto, const std::string& caffeTrainedModel, const int gpuId,
-                         const bool enableGoogleLogging, const std::string& lastBlobName) :
+                         const bool enableGoogleLogging, const std::string& lastBlobName, const std::string& firstBlobName) :
                 mGpuId{gpuId},
                 mCaffeProto{caffeProto},
                 mCaffeTrainedModel{caffeTrainedModel},
-                mLastBlobName{lastBlobName}
+                mLastBlobName{lastBlobName},
+                mFirstBlobName{firstBlobName}
             {
                 try
                 {
@@ -123,10 +128,10 @@ namespace op
     #endif
 
     NetCaffe::NetCaffe(const std::string& caffeProto, const std::string& caffeTrainedModel, const int gpuId,
-                       const bool enableGoogleLogging, const std::string& lastBlobName)
+                       const bool enableGoogleLogging, const std::string& lastBlobName, const std::string& firstBlobName)
         #ifdef USE_CAFFE
             : upImpl{new ImplNetCaffe{caffeProto, caffeTrainedModel, gpuId, enableGoogleLogging,
-                                      lastBlobName}}
+                                      lastBlobName, firstBlobName}}
         #endif
     {
         try
@@ -187,13 +192,24 @@ namespace op
                         cudaCheck(__LINE__, __FUNCTION__, __FILE__);
                     #endif
                 #endif
+                mFirstBlobIdx = upImpl->upCaffeNet->layer_index_by_name(upImpl->mFirstBlobName);
+                mLastBlobIdx = upImpl->upCaffeNet->layer_index_by_name(upImpl->mLastBlobName);
                 // Set spOutputBlob
+                // Set spInputBlob
                 #ifdef NV_CAFFE
                     upImpl->spOutputBlob = boost::static_pointer_cast<caffe::TBlob<float>>(
                         upImpl->upCaffeNet->blob_by_name(upImpl->mLastBlobName));
+                    upImpl->spInputBlob = boost::static_pointer_cast<caffe::TBlob<float>>(
+                        upImpl->upCaffeNet->blob_by_name(upImpl->mFirstBlobName));
                 #else
+                    upImpl->spInputBlob = upImpl->upCaffeNet->blob_by_name(upImpl->mFirstBlobName);
                     upImpl->spOutputBlob = upImpl->upCaffeNet->blob_by_name(upImpl->mLastBlobName);
+                    // upImpl->spOutputBlob = upImpl->upCaffeNet->blob_by_name("pool1_stage1");
                 #endif
+                // Sanity check
+                if (upImpl->spInputBlob == nullptr)
+                    error("The input blob is a nullptr. Did you use the same name than the prototxt? (Used: "
+                          + upImpl->mFirstBlobName + ").", __LINE__, __FUNCTION__, __FILE__);
                 // Sanity check
                 if (upImpl->spOutputBlob == nullptr)
                     error("The output blob is a nullptr. Did you use the same name than the prototxt? (Used: "
@@ -245,7 +261,8 @@ namespace op
                     std::copy(inputData.getConstPtr(), inputData.getConstPtr() + inputData.getVolume(), cpuImagePtr);
                 #endif
                 // Perform deep network forward pass
-                upImpl->upCaffeNet->ForwardFrom(0);
+                // upImpl->upCaffeNet->ForwardFrom(0);
+                upImpl->upCaffeNet->ForwardFromTo(mFirstBlobIdx, mLastBlobIdx);
                 // Cuda checks
                 #ifdef USE_CUDA
                     cudaCheck(__LINE__, __FUNCTION__, __FILE__);

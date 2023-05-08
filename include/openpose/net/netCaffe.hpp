@@ -10,7 +10,8 @@ namespace op
     {
     public:
         NetCaffe(const std::string& caffeProto, const std::string& caffeTrainedModel, const int gpuId = 0,
-                 const bool enableGoogleLogging = true, const std::string& lastBlobName = "net_output");
+                 const bool enableGoogleLogging = true, const std::string& lastBlobName = "net_output",
+                 const std::string& firstBlobName = "input");
 
         virtual ~NetCaffe();
 

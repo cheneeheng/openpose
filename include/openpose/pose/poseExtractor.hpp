@@ -33,6 +33,8 @@ namespace op
         // PoseExtractorNet functions
         Array<float> getHeatMapsCopy() const;
 
+        Array<float> getRawHeatMaps() const;
+
         std::vector<std::vector<std::array<float, 3>>> getCandidatesCopy() const;
 
         Array<float> getPoseKeypoints() const;

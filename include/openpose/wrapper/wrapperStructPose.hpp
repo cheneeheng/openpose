@@ -213,6 +213,10 @@ namespace op
          */
         bool enableGoogleLogging;
 
+        bool netOnly;
+        String customNetInputLayer;
+        String customNetOutputLayer;
+
         /**
          * Constructor of the struct.
          * It has the recommended and default values we recommend for each element of the struct.
@@ -231,7 +235,8 @@ namespace op
             const ScaleMode heatMapScaleMode = ScaleMode::UnsignedChar, const bool addPartCandidates = false,
             const float renderThreshold = 0.05f, const int numberPeopleMax = -1, const bool maximizePositives = false,
             const double fpsMax = -1., const String& protoTxtPath = "", const String& caffeModelPath = "",
-            const float upsamplingRatio = 0.f, const bool enableGoogleLogging = true);
+            const float upsamplingRatio = 0.f, const bool enableGoogleLogging = true,
+            const bool netOnly = false, const String& customNetInputLayer = "", const String& customNetOutputLayer = "");
     };
 }
 

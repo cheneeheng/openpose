@@ -6,6 +6,8 @@
 #include <openpose/utilities/string.hpp>
 #include <openpose/filestream/jsonOfstream.hpp>
 
+#include <iostream>
+
 namespace op
 {
     // Private class (on *.cpp)
@@ -202,6 +204,41 @@ namespace op
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
+        }
+    }
+
+    Array<float> loadFloatArray(const std::string& fullFilePath)
+    {
+        try
+        {
+            // Open file
+            std::ifstream inputFile;
+            inputFile.open(fullFilePath, std::ios::binary);
+            inputFile.seekg(0);
+            // Dimensions info
+            Array<float> dimsInfo(4);
+            for (auto i = 0u ; i < 4 ; i++)
+            {
+                inputFile.read((char*)&dimsInfo[i], sizeof(float));
+            }
+            // Array to load data onto
+            size_t c = 0;
+            Array<float> array({(int)(dimsInfo[1]), (int)(dimsInfo[2]), (int)(dimsInfo[3])}, 0.0);
+            while (inputFile.read(reinterpret_cast<char*>(&array[c]), sizeof(float)))
+            {
+                c++;
+                if (c+4 >= array.getVolume())
+                    break;
+            }
+            // inputFile.read(reinterpret_cast<char*>(&array), array.getVolume() * sizeof(float));
+            // Close file
+            inputFile.close();
+            return array;
+        }
+        catch (const std::exception& e)
+        {
+            error(e.what(), __LINE__, __FUNCTION__, __FILE__);
+            return Array<float>();
         }
     }
 

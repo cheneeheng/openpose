@@ -47,12 +47,13 @@ namespace op
 
     PoseExtractorNet::PoseExtractorNet(const PoseModel poseModel, const std::vector<HeatMapType>& heatMapTypes,
                                        const ScaleMode heatMapScaleMode, const bool addPartCandidates,
-                                       const bool maximizePositives) :
+                                       const bool maximizePositives, const bool customOutput) :
         mPoseModel{poseModel},
         mNetOutputSize{0,0},
         mHeatMapTypes{heatMapTypes},
         mHeatMapScaleMode{heatMapScaleMode},
-        mAddPartCandidates{addPartCandidates}
+        mAddPartCandidates{addPartCandidates},
+        mCustomOutput{customOutput}
     {
         try
         {
@@ -118,8 +119,15 @@ namespace op
                 const auto heatMapSize = getHeatMapSize();
 
                 // Allocate memory
-                const auto numberHeatMapChannels = getNumberHeatMapChannels(mHeatMapTypes, mPoseModel);
-                heatMaps.reset({numberHeatMapChannels, heatMapSize[2], heatMapSize[3]});
+                if (mCustomOutput)
+                {
+                    heatMaps.reset({heatMapSize[1], heatMapSize[2], heatMapSize[3]});
+                }
+                else
+                {
+                    const auto numberHeatMapChannels = getNumberHeatMapChannels(mHeatMapTypes, mPoseModel);
+                    heatMaps.reset({numberHeatMapChannels, heatMapSize[2], heatMapSize[3]});
+                }
 
                 // Copy memory
                 const auto channelOffset = heatMaps.getVolume(1, 2);
@@ -235,6 +243,20 @@ namespace op
                 cudaCheck(__LINE__, __FUNCTION__, __FILE__);
             #endif
             return heatMaps;
+        }
+        catch (const std::exception& e)
+        {
+            error(e.what(), __LINE__, __FUNCTION__, __FILE__);
+            return Array<float>{};
+        }
+    }
+
+    Array<float> PoseExtractorNet::getRawHeatMaps() const
+    {
+        try
+        {
+            checkThread();
+            return mRawHeatMaps;
         }
         catch (const std::exception& e)
         {
