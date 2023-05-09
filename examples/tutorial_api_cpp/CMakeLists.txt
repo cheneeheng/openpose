@@ -19,7 +19,7 @@
 #     18_synchronous_custom_all_and_datum.cpp)
 set(EXAMPLE_FILES
     01_body_from_image_default.cpp
-    09_keypoints_from_heatmaps.cpp
+    09_keypoints_from_heatmaps_modified.cpp
     )
 
 include(${CMAKE_SOURCE_DIR}/cmake/Utils.cmake)

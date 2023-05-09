@@ -176,22 +176,12 @@ int tutorialApiCpp()
         op::opLog("Starting OpenPose demo...", op::Priority::High);
         const auto opTimer = op::getTimerInit();
 
+        // Disable rendering
+        FLAGS_render_pose = 0;
+
         // Image to process
         const cv::Mat cvImageToProcess = cv::imread(FLAGS_image_path);
         const op::Matrix imageToProcess = OP_CV2OPCONSTMAT(cvImageToProcess);
-
-        // Disable rendering
-        // FLAGS_render_pose = 0;
-        // Required flags to disable the OpenPose network
-        // FLAGS_body = 2;
-        // Custom input
-        FLAGS_custom_net_input_layer = "pool2_stage1";
-        // FLAGS_custom_net_input_layer = "net_output";
-
-        // Configuring OpenPose
-        op::opLog("Configuring OpenPose...", op::Priority::High);
-        op::Wrapper opWrapper{op::ThreadManagerMode::Asynchronous};
-        configureWrapper(opWrapper);
 
         // Heatmap set selection
         std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> datumHeatmaps;
@@ -201,12 +191,12 @@ int tutorialApiCpp()
         {
             op::opLog("Temporarily running another OpenPose instance to get the heatmaps...", op::Priority::High);
             // Required flags to enable heatmaps
-            FLAGS_heatmaps_add_parts = false;
-            FLAGS_heatmaps_add_bkg = false;
-            FLAGS_heatmaps_add_PAFs = false;
-            FLAGS_heatmaps_scale = 1;
+            // FLAGS_heatmaps_add_parts = false;
+            // FLAGS_heatmaps_add_bkg = false;
+            // FLAGS_heatmaps_add_PAFs = false;
+            // FLAGS_heatmaps_scale = 1;
             FLAGS_upsampling_ratio = 1;
-            FLAGS_body = 1;
+            // FLAGS_body = 1;
             FLAGS_posenet_only = true;
             FLAGS_custom_net_input_layer = "";
             FLAGS_custom_net_output_layer = "pool2_stage1";
@@ -233,46 +223,80 @@ int tutorialApiCpp()
         hms.saveHeatMaps({datumHeatmaps->at(0)->poseRawHeatMaps}, "zombie");
         auto saved_hm = op::loadFloatArray("tmp/zombie.float");
 
-        // Starting OpenPose
-        opWrapper.disableMultiThreading();
-        op::opLog("Starting thread(s)...", op::Priority::High);
-        opWrapper.start();
-
-        // Create new datum
-        auto datumProcessed = std::make_shared<std::vector<std::shared_ptr<op::Datum>>>();
-        datumProcessed->emplace_back();
-        auto& datumPtr = datumProcessed->at(0);
-        datumPtr = std::make_shared<op::Datum>();
-
-        // Fill datum
-        datumPtr->cvInputData = imageToProcess;
-        // datumPtr->poseNetOutput = datumHeatmaps->at(0)->poseHeatMaps;
-
-        // // Display image
-        // if (opWrapper.emplaceAndPop(datumProcessed))
+        // 1. inference from final heatmaps to extract pose.
         // {
-        //     printKeypoints(datumProcessed);
-        //     if (!FLAGS_no_display)
-        //         display(datumProcessed);
-        // }
-        // else
-        //     op::opLog("Image could not be processed.", op::Priority::High);
+        //     FLAGS_upsampling_ratio = 0;
+        //     FLAGS_body = 2;
+        //     FLAGS_posenet_only = false;
+        //     FLAGS_custom_net_input_layer = "";
+        //     FLAGS_custom_net_output_layer = "";
 
-        // {
-        //     datumPtr->poseNetOutput = datumHeatmaps->at(0)->poseRawHeatMaps;
-        //     opWrapper.emplaceAndPop(datumProcessed);
+        //     // Configuring OpenPose
+        //     op::opLog("Configuring OpenPose...", op::Priority::High);
+        //     op::Wrapper opWrapper{op::ThreadManagerMode::Asynchronous};
+        //     configureWrapper(opWrapper);
+
+        //     // Starting OpenPose
+        //     op::opLog("Starting thread(s)...", op::Priority::High);
+        //     opWrapper.start();
+
+        //     // Create new datum
+        //     auto datumProcessed = std::make_shared<std::vector<std::shared_ptr<op::Datum>>>();
+        //     datumProcessed->emplace_back();
+        //     auto& datumPtr = datumProcessed->at(0);
+        //     datumPtr = std::make_shared<op::Datum>();
+
+        //     // Fill datum
+        //     datumPtr->cvInputData = imageToProcess;
+        //     datumPtr->poseNetOutput = datumHeatmaps->at(0)->poseHeatMaps;
+        //     if (opWrapper.emplaceAndPop(datumProcessed))
+        //     {
+        //         printKeypoints(datumProcessed);
+        //         if (!FLAGS_no_display)
+        //             display(datumProcessed);
+        //     }
+        //     else
+        //         op::opLog("Image could not be processed.", op::Priority::High);
         //     auto arr = datumProcessed->at(0)->poseKeypoints;
         //     float total = 0.0;
         //     for (size_t i=0; i<arr.getVolume(); i++)
         //         total += arr[i];
         //     op::opLog("Total keypoints: " + std::to_string(total), op::Priority::High);
         // }
+        // 2. inference from custom layer in caffe
         {
-            // datumPtr->poseNetOutput = saved_hm;
+            FLAGS_upsampling_ratio = 0;
+            FLAGS_body = 1;
+            FLAGS_posenet_only = false;
+            FLAGS_custom_net_input_layer = "pool2_stage1";
+            FLAGS_custom_net_output_layer = "";
+
+            // Configuring OpenPose
+            op::opLog("Configuring OpenPose...", op::Priority::High);
+            op::Wrapper opWrapper{op::ThreadManagerMode::Asynchronous};
+            configureWrapper(opWrapper);
+
+            // Starting OpenPose
+            op::opLog("Starting thread(s)...", op::Priority::High);
+            opWrapper.start();
+
+            // Create new datum
+            auto datumProcessed = std::make_shared<std::vector<std::shared_ptr<op::Datum>>>();
+            datumProcessed->emplace_back();
+            auto& datumPtr = datumProcessed->at(0);
+            datumPtr = std::make_shared<op::Datum>();
+
+            // Fill datum
+            datumPtr->cvInputData = imageToProcess;
             datumPtr->customInputNetData = {saved_hm};
-            opWrapper.emplaceAndPop(datumProcessed);
-            printKeypoints(datumProcessed);
-            // display(datumProcessed);
+            if (opWrapper.emplaceAndPop(datumProcessed))
+            {
+                printKeypoints(datumProcessed);
+                if (!FLAGS_no_display)
+                    display(datumProcessed);
+            }
+            else
+                op::opLog("Image could not be processed.", op::Priority::High);
             auto arr = datumProcessed->at(0)->poseKeypoints;
             float total = 0.0;
             for (size_t i=0; i<arr.getVolume(); i++)
