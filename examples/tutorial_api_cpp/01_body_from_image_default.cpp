@@ -14,7 +14,7 @@
 DEFINE_string(image_path, "examples/media/COCO_val2014_000000000192.jpg",
     "Process an image. Read all standard formats (jpg, png, bmp, etc.).");
 // Display
-DEFINE_bool(no_display,                 false,
+DEFINE_bool(no_display, false,
     "Enable to disable the visual display.");
 
 // This worker will just read and return all the jpg files in a directory
@@ -118,6 +118,13 @@ int tutorialApiCpp()
         }
         else
             op::opLog("Image could not be processed.", op::Priority::High);
+        
+        auto arr = datumProcessed->at(0)->poseKeypoints;
+        float total = 0.0;
+        for (size_t i=0; i<arr.getVolume(); i++)
+            total += arr[i];
+        // Total keypoints: 48434.691406 for COCO_val2014_000000000192
+        op::opLog("Total keypoints: " + std::to_string(total), op::Priority::High);
 
         // Measuring total time
         op::printTime(opTimer, "OpenPose demo successfully finished. Total time: ", " seconds.", op::Priority::High);

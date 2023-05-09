@@ -1,22 +1,26 @@
+# set(EXAMPLE_FILES
+#     01_body_from_image_default.cpp
+#     02_whole_body_from_image_default.cpp
+#     03_keypoints_from_image.cpp
+#     04_keypoints_from_images.cpp
+#     05_keypoints_from_images_multi_gpu.cpp
+#     06_face_from_image.cpp
+#     07_hand_from_image.cpp
+#     08_heatmaps_from_image.cpp
+#     09_keypoints_from_heatmaps.cpp
+#     10_asynchronous_custom_input.cpp
+#     11_asynchronous_custom_input_multi_camera.cpp
+#     12_asynchronous_custom_output.cpp
+#     13_asynchronous_custom_input_output_and_datum.cpp
+#     14_synchronous_custom_input.cpp
+#     15_synchronous_custom_preprocessing.cpp
+#     16_synchronous_custom_postprocessing.cpp
+#     17_synchronous_custom_output.cpp
+#     18_synchronous_custom_all_and_datum.cpp)
 set(EXAMPLE_FILES
     01_body_from_image_default.cpp
-    02_whole_body_from_image_default.cpp
-    03_keypoints_from_image.cpp
-    04_keypoints_from_images.cpp
-    05_keypoints_from_images_multi_gpu.cpp
-    06_face_from_image.cpp
-    07_hand_from_image.cpp
-    08_heatmaps_from_image.cpp
     09_keypoints_from_heatmaps.cpp
-    10_asynchronous_custom_input.cpp
-    11_asynchronous_custom_input_multi_camera.cpp
-    12_asynchronous_custom_output.cpp
-    13_asynchronous_custom_input_output_and_datum.cpp
-    14_synchronous_custom_input.cpp
-    15_synchronous_custom_preprocessing.cpp
-    16_synchronous_custom_postprocessing.cpp
-    17_synchronous_custom_output.cpp
-    18_synchronous_custom_all_and_datum.cpp)
+    )
 
 include(${CMAKE_SOURCE_DIR}/cmake/Utils.cmake)
 

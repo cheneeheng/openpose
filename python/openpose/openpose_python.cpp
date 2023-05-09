@@ -367,6 +367,7 @@ namespace op
             .def_readwrite("frameNumber", &Datum::frameNumber)
             .def_readwrite("cvInputData", &Datum::cvInputData)
             .def_readwrite("inputNetData", &Datum::inputNetData)
+            .def_readwrite("customInputNetData", &Datum::customInputNetData)
             .def_readwrite("outputData", &Datum::outputData)
             .def_readwrite("cvOutputData", &Datum::cvOutputData)
             .def_readwrite("cvOutputData3D", &Datum::cvOutputData3D)

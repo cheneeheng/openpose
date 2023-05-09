@@ -137,3 +137,6 @@ html/
 
 ######################### Validation Scripts & Testing #########################
 output*/
+
+.vscode/
+tmp/
