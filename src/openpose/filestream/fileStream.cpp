@@ -216,14 +216,14 @@ namespace op
             inputFile.open(fullFilePath, std::ios::binary);
             inputFile.seekg(0);
             // Dimensions info
-            Array<float> dimsInfo(4);
-            for (auto i = 0u ; i < 4 ; i++)
+            Array<float> dimsInfo(5);
+            for (auto i = 0u ; i < 5 ; i++)
             {
                 inputFile.read((char*)&dimsInfo[i], sizeof(float));
             }
             // Array to load data onto
             size_t c = 0;
-            Array<float> array({1, (int)(dimsInfo[1]), (int)(dimsInfo[2]), (int)(dimsInfo[3])}, 0.0);
+            Array<float> array({(int)(dimsInfo[1]), (int)(dimsInfo[2]), (int)(dimsInfo[3]), (int)(dimsInfo[4])}, 0.0);
             while (inputFile.read(reinterpret_cast<char*>(&array[c]), sizeof(float)))
             {
                 c++;

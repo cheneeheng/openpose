@@ -251,7 +251,7 @@ namespace op
         }
     }
 
-    Array<float> PoseExtractorNet::getRawHeatMaps() const
+    std::vector<Array<float>> PoseExtractorNet::getRawHeatMaps() const
     {
         try
         {
@@ -261,7 +261,7 @@ namespace op
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return Array<float>{};
+            return std::vector<Array<float>>{};
         }
     }
 

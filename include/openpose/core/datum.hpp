@@ -117,7 +117,7 @@ namespace op
          * Size: #heatmaps x output_net_height x output_net_width
          */
         Array<float> poseHeatMaps;
-        Array<float> poseRawHeatMaps;
+        std::vector<Array<float>> poseRawHeatMaps;
 
         /**
          * Body pose candidates for the whole image.

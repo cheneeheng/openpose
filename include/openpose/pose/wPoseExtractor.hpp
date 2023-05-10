@@ -82,7 +82,7 @@ namespace op
                     // OpenPose keypoint detector
                     tDatumPtr->poseCandidates = spPoseExtractor->getCandidatesCopy();
                     tDatumPtr->poseHeatMaps = spPoseExtractor->getHeatMapsCopy();
-                    tDatumPtr->poseRawHeatMaps = spPoseExtractor->getRawHeatMaps().clone();
+                    tDatumPtr->poseRawHeatMaps = spPoseExtractor->getRawHeatMaps();
                     tDatumPtr->poseKeypoints = spPoseExtractor->getPoseKeypoints().clone();
                     tDatumPtr->poseScores = spPoseExtractor->getPoseScores().clone();
                     tDatumPtr->scaleNetToOutput = spPoseExtractor->getScaleNetToOutput();

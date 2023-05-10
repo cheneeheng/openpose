@@ -39,7 +39,7 @@ namespace op
 
         Array<float> getHeatMapsCopy() const;
 
-        Array<float> getRawHeatMaps() const;
+        std::vector<Array<float>> getRawHeatMaps() const;
 
         std::vector<std::vector<std::array<float,3>>> getCandidatesCopy() const;
 
@@ -64,7 +64,7 @@ namespace op
         Point<int> mNetOutputSize;
         Array<float> mPoseKeypoints;
         Array<float> mPoseScores;
-        Array<float> mRawHeatMaps;
+        std::vector<Array<float>> mRawHeatMaps;
         float mScaleNetToOutput;
 
         void checkThread() const;

@@ -299,12 +299,16 @@ namespace op
                 }
 
                 // Expose raw heatmaps
-                const auto outputSize = spCaffeNetOutputBlobs[0]->shape();
-                mRawHeatMaps.reset({outputSize[1], outputSize[2], outputSize[3]});
-                cudaMemcpy(mRawHeatMaps.getPtr(),
-                           spCaffeNetOutputBlobs[0]->gpu_data(),
-                           spCaffeNetOutputBlobs[0]->count() * sizeof(float),
-                           cudaMemcpyDeviceToHost);
+                mRawHeatMaps.resize(inputNetData.size());
+                for (auto i = 0u ; i < inputNetData.size(); i++)
+                {
+                    const auto outputSize = spCaffeNetOutputBlobs[i]->shape();
+                    mRawHeatMaps[i].reset({outputSize[0], outputSize[1], outputSize[2], outputSize[3]});
+                    cudaMemcpy(mRawHeatMaps[i].getPtr(),
+                            spCaffeNetOutputBlobs[i]->gpu_data(),
+                            spCaffeNetOutputBlobs[i]->count() * sizeof(float),
+                            cudaMemcpyDeviceToHost);
+                }
 
                 // Reshape blobs if required
                 for (auto i = 0u ; i < inputNetData.size(); i++)

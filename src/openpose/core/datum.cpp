@@ -327,7 +327,7 @@ namespace op
             datum.poseIds = poseIds.clone();
             datum.poseScores = poseScores.clone();
             datum.poseHeatMaps = poseHeatMaps.clone();
-            datum.poseRawHeatMaps = poseRawHeatMaps.clone();
+            datum.poseRawHeatMaps = poseRawHeatMaps;
             datum.poseCandidates = poseCandidates;
             datum.faceRectangles = faceRectangles;
             datum.faceKeypoints = faceKeypoints.clone();
